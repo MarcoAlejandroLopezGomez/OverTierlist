@@ -1,0 +1,330 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <title>Robot Tier List</title>
+    <style>
+        .draggable {
+            cursor: move;
+        }
+        .droppable {
+            min-height: 100px;
+        }
+        .crossed-out {
+            position: relative;
+        }
+        .crossed-out::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: red;
+            transform: rotate(-45deg);
+        }
+        .cross-out-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('https://via.placeholder.com/100x100/FF0000/FF0000?text=X') center center no-repeat;
+            background-size: cover;
+            pointer-events: none;
+        }
+        .image-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            color: black;
+            padding: 20px;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 800px;
+            position: relative;
+        }
+        .modal img {
+            cursor: pointer;
+        }
+        .modal img.zoomed {
+            width: 200%;
+            height: 200%;
+        }
+    </style>
+</head>
+<body class="bg-black text-white font-sans">
+    <div class="text-center text-xl font-bold py-4 border-b-4 border-purple-500">
+        OVERTURE PRESENTS ROBOTOS TIER LIST
+    </div>
+    <div class="grid grid-cols-12 gap-0">
+        <div class="col-span-1 bg-yellow-300 text-black text-center py-8 border-b border-dotted border-white">
+            1st Pick
+        </div>
+        <div id="first-pick" class="col-span-11 bg-yellow-300 border-b border-dotted border-white flex items-center justify-center droppable">
+        </div>
+        <div class="col-span-1 bg-green-300 text-black text-center py-8 border-b border-dotted border-white">
+            2nd Pick
+        </div>
+        <div id="second-pick" class="col-span-11 bg-green-300 border-b border-dotted border-white flex items-center justify-center droppable">
+        </div>
+        <div class="col-span-1 bg-orange-300 text-black text-center py-8 border-b border-dotted border-white">
+            3rd Pick
+        </div>
+        <div id="third-pick" class="col-span-11 bg-orange-300 border-b border-dotted border-white flex items-center justify-center droppable">
+        </div>
+        <div class="col-span-1 bg-pink-300 text-black text-center py-8 border-b border-dotted border-white">
+            Ojito
+        </div>
+        <div id="ojito" class="col-span-11 bg-pink-300 border-b border-dotted border-white flex items-center justify-center droppable">
+        </div>
+        <div class="col-span-1 bg-purple-300 text-black text-center py-8">
+            NO
+        </div>
+        <div id="no" class="col-span-11 bg-purple-300 flex items-center justify-center droppable">
+        </div>
+    </div>
+    <div class="flex justify-center items-center space-x-4 py-4 border-t-4 border-purple-500">
+        <input type="file" id="file-input" class="hidden" multiple accept="image/*">
+        <label for="file-input" class="h-24 w-24 flex items-center justify-center bg-purple-500 cursor-pointer">
+            <i class="fas fa-upload text-4xl"></i>
+        </label>
+        <button id="cross-out-toggle" class="h-24 w-24 flex items-center justify-center bg-purple-500 cursor-pointer">
+            <i class="fas fa-times text-4xl"></i>
+        </button>
+        <button id="save-tier-list" class="h-24 w-24 flex items-center justify-center bg-purple-500 cursor-pointer">
+            <i class="fas fa-save text-4xl"></i>
+        </button>
+        <input type="file" id="load-tier-list" class="hidden" accept=".txt">
+        <label for="load-tier-list" class="h-24 w-24 flex items-center justify-center bg-purple-500 cursor-pointer">
+            <i class="fas fa-file-upload text-4xl"></i>
+        </label>
+    </div>
+    <div id="image-container" class="flex justify-center items-center space-x-4 py-4 border-t-4 border-purple-500">
+    </div>
+
+    <div id="modal" class="modal flex">
+        <div class="modal-content">
+            <img id="modal-image" src="" class="h-24 w-24">
+            <input id="modal-title" type="text" class="block w-full text-center text-xl font-bold my-4" placeholder="Title">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <h3 class="text-lg font-bold">List of Bad Things</h3>
+                    <ul id="bad-things-list" class="list-disc pl-5">
+                        <li contenteditable="true">Bad thing 1</li>
+                        <li contenteditable="true">Bad thing 2</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold">List of Good Things</h3>
+                    <ul id="good-things-list" class="list-disc pl-5">
+                        <li contenteditable="true">Good thing 1</li>
+                        <li contenteditable="true">Good thing 2</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold">List of Strategies</h3>
+                    <ul id="strategies-list" class="list-disc pl-5">
+                        <li contenteditable="true">Strategy 1</li>
+                        <li contenteditable="true">Strategy 2</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold">List of Mechanisms</h3>
+                    <ul id="mechanisms-list" class="list-disc pl-5">
+                        <li contenteditable="true">Mechanism 1</li>
+                        <li contenteditable="true">Mechanism 2</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const imageContainer = document.getElementById('image-container');
+        const droppables = document.querySelectorAll('.droppable');
+        const crossOutToggle = document.getElementById('cross-out-toggle');
+        const saveTierList = document.getElementById('save-tier-list');
+        const loadTierList = document.getElementById('load-tier-list');
+        const modal = document.getElementById('modal');
+        const modalImage = document.getElementById('modal-image');
+        const modalTitle = document.getElementById('modal-title');
+        const badThingsList = document.getElementById('bad-things-list');
+        const goodThingsList = document.getElementById('good-things-list');
+        const strategiesList = document.getElementById('strategies-list');
+        const mechanismsList = document.getElementById('mechanisms-list');
+
+        let crossOutMode = false;
+
+        fileInput.addEventListener('change', (event) => {
+            const files = event.target.files;
+            for (const file of files) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const imgWrapper = document.createElement('div');
+                    imgWrapper.classList.add('image-wrapper');
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.classList.add('h-24', 'w-24', 'draggable');
+                    img.draggable = true;
+                    img.addEventListener('dragstart', dragStart);
+                    img.addEventListener('click', handleImageClick);
+                    imgWrapper.appendChild(img);
+                    imageContainer.appendChild(imgWrapper);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function dragStart(event) {
+            event.dataTransfer.setData('text/plain', event.target.src);
+            event.dataTransfer.setData('text/html', event.target.outerHTML);
+            event.dataTransfer.effectAllowed = 'move';
+            event.target.classList.add('dragging');
+        }
+
+        function dragEnd(event) {
+            event.target.classList.remove('dragging');
+        }
+
+        function handleImageClick(event) {
+            if (crossOutMode) {
+                toggleCrossOut(event);
+            } else {
+                openModal(event.target.src);
+            }
+        }
+
+        function toggleCrossOut(event) {
+            const imgWrapper = event.target.parentElement;
+            let crossOutOverlay = imgWrapper.querySelector('.cross-out-overlay');
+            if (crossOutOverlay) {
+                crossOutOverlay.remove();
+            } else {
+                crossOutOverlay = document.createElement('div');
+                crossOutOverlay.classList.add('cross-out-overlay');
+                imgWrapper.appendChild(crossOutOverlay);
+            }
+        }
+
+        function openModal(src) {
+            modalImage.src = src;
+            modal.style.display = 'flex';
+        }
+
+        modalImage.addEventListener('click', () => {
+            modalImage.classList.toggle('zoomed');
+        });
+
+        crossOutToggle.addEventListener('click', () => {
+            crossOutMode = !crossOutMode;
+            crossOutToggle.classList.toggle('bg-red-500', crossOutMode);
+        });
+
+        droppables.forEach(droppable => {
+            droppable.addEventListener('dragover', (event) => {
+                event.preventDefault();
+            });
+
+            droppable.addEventListener('drop', (event) => {
+                event.preventDefault();
+                const src = event.dataTransfer.getData('text/plain');
+                const imgHTML = event.dataTransfer.getData('text/html');
+                const imgWrapper = document.createElement('div');
+                imgWrapper.classList.add('image-wrapper');
+                imgWrapper.innerHTML = imgHTML;
+                const imgElement = imgWrapper.firstChild;
+                imgElement.classList.remove('dragging');
+                imgElement.addEventListener('dragstart', dragStart);
+                imgElement.addEventListener('dragend', dragEnd);
+                imgElement.addEventListener('click', handleImageClick);
+                event.target.appendChild(imgWrapper);
+
+                const draggingElement = document.querySelector('.dragging');
+                if (draggingElement) {
+                    draggingElement.parentElement.remove();
+                }
+            });
+        });
+
+        document.addEventListener('dragend', dragEnd);
+
+        saveTierList.addEventListener('click', () => {
+            const tierList = {};
+            droppables.forEach(droppable => {
+                const id = droppable.id;
+                tierList[id] = [];
+                droppable.querySelectorAll('.image-wrapper').forEach(wrapper => {
+                    const img = wrapper.querySelector('img');
+                    const crossedOut = wrapper.querySelector('.cross-out-overlay') !== null;
+                    tierList[id].push({
+                        src: img.src,
+                        crossedOut: crossedOut
+                    });
+                });
+            });
+            const blob = new Blob([JSON.stringify(tierList, null, 2)], { type: 'text/plain' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'tier-list.txt';
+            a.click();
+        });
+
+        loadTierList.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const tierList = JSON.parse(e.target.result);
+                    for (const [id, images] of Object.entries(tierList)) {
+                        const droppable = document.getElementById(id);
+                        droppable.innerHTML = '';
+                        images.forEach(image => {
+                            const imgWrapper = document.createElement('div');
+                            imgWrapper.classList.add('image-wrapper');
+                            const img = document.createElement('img');
+                            img.src = image.src;
+                            img.classList.add('h-24', 'w-24', 'draggable');
+                            if (image.crossedOut) {
+                                const crossOutOverlay = document.createElement('div');
+                                crossOutOverlay.classList.add('cross-out-overlay');
+                                imgWrapper.appendChild(crossOutOverlay);
+                            }
+                            img.draggable = true;
+                            img.addEventListener('dragstart', dragStart);
+                            img.addEventListener('dragend', dragEnd);
+                            img.addEventListener('click', handleImageClick);
+                            imgWrapper.appendChild(img);
+                            droppable.appendChild(imgWrapper);
+                        });
+                    }
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
